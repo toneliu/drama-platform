@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Put, Body, Param, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Query, ParseIntPipe, DefaultValuePipe, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { IsString, IsOptional, IsNumber } from 'class-validator';
 import { AdminService } from './admin.service';
-import { SubscriptionTier } from '../subscription/entities/subscription.entity';
+import { JwtService } from '@nestjs/jwt';
 
 class CreateTierDto {
   @IsString()
@@ -29,7 +29,25 @@ class CreateTierDto {
 @ApiTags('管理后台')
 @Controller('api/v1/admin')
 export class AdminController {
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private jwtService: JwtService,
+  ) {}
+
+  @Post('login')
+  @ApiOperation({ summary: '管理员登录' })
+  async login(@Body() dto: { username: string; password: string }) {
+    // 简单验证：admin/admin123
+    if (dto.username === 'admin' && dto.password === 'admin123') {
+      const token = this.jwtService.sign({
+        sub: 0,
+        username: 'admin',
+        role: 'admin',
+      });
+      return { token, username: 'admin' };
+    }
+    throw new UnauthorizedException('用户名或密码错误');
+  }
 
   @Get('dashboard')
   @ApiOperation({ summary: '仪表盘统计' })
