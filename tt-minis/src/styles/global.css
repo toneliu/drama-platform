@@ -1,0 +1,66 @@
+:root {
+  --color-primary: #fe2c55;
+  --color-primary-light: #ff4d70;
+  --color-bg: #0a0a0a;
+  --color-bg-card: #1a1a1a;
+  --color-bg-dialog: #222;
+  --color-text: #ffffff;
+  --color-text-secondary: #999;
+  --color-text-hint: #666;
+  --color-border: #333;
+  --color-gold: #ffd700;
+  --color-vip: #ff6b35;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 安全区域适配 */
+.safe-area-top {
+  padding-top: var(--safe-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-bottom);
+}
+
+/* 隐藏滚动条 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Vant 暗色主题覆盖 */
+:root:root {
+  --van-background: var(--color-bg);
+  --van-background-2: var(--color-bg-card);
+  --van-text-color: var(--color-text);
+  --van-text-color-2: var(--color-text-secondary);
+  --van-text-color-3: var(--color-text-hint);
+  --van-border-color: var(--color-border);
+  --van-primary-color: var(--color-primary);
+  --van-active-color: var(--color-primary-light);
+}

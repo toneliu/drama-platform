@@ -1,0 +1,75 @@
+:root {
+  --primary: #ff4d6a;
+  --primary-dark: #e63e5a;
+  --gold: #ffd700;
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --text-primary: #333333;
+  --text-secondary: #999999;
+  --text-light: #cccccc;
+  --border: #eeeeee;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+.page {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.section {
+  padding: 24px;
+}
+
+.section-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 40px;
+  padding: 16px 48px;
+  font-size: 28px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:active {
+  background: var(--primary-dark);
+}
+
+.gold-coin {
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.vip-badge {
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 600;
+}

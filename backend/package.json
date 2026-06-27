@@ -1,0 +1,44 @@
+{
+  "name": "drama-platform-api",
+  "version": "1.0.0",
+  "description": "短剧平台后端API",
+  "scripts": {
+    "build": "nest build",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main",
+    "migration:generate": "typeorm migration:generate -d src/config/database.ts",
+    "migration:run": "typeorm migration:run -d src/config/database.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.4.0",
+    "@nestjs/core": "^10.4.0",
+    "@nestjs/platform-express": "^10.4.0",
+    "@nestjs/typeorm": "^10.0.0",
+    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/passport": "^10.0.0",
+    "@nestjs/config": "^3.2.0",
+    "@nestjs/schedule": "^4.1.0",
+    "@nestjs/swagger": "^7.4.0",
+    "typeorm": "^0.3.20",
+    "mysql2": "^3.11.0",
+    "ioredis": "^5.4.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "bcryptjs": "^2.4.3",
+    "ali-oss": "^6.20.0",
+    "axios": "^1.7.0",
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.1",
+    "dayjs": "^1.11.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.4.0",
+    "@nestjs/schematics": "^10.1.0",
+    "@types/node": "^20.0.0",
+    "@types/passport-jwt": "^4.0.0",
+    "@types/bcryptjs": "^2.4.0",
+    "typescript": "^5.5.0"
+  }
+}
