@@ -8,11 +8,7 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'https://your-domain.com',
-    ],
+    origin: true,
     credentials: true,
   });
 
@@ -35,9 +31,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api-docs', app, document);
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  console.log(`🚀 API running on http://localhost:${port}`);
-  console.log(`📄 Swagger docs: http://localhost:${port}/api-docs`);
+  const port = process.env.PORT || 3001;
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 API running on http://0.0.0.0:${port}`);
+  console.log(`📄 Swagger docs: http://0.0.0.0:${port}/api-docs`);
 }
 bootstrap();

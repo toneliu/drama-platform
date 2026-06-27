@@ -119,4 +119,59 @@ export class DramaService {
       .getRawMany();
     return result;
   }
+
+  // ============ 管理后台接口 ============
+
+  /**
+   * 管理后台 - 获取所有剧目（含下架）
+   */
+  async findAll(page = 1, limit = 20, keyword?: string) {
+    const qb = this.dramaRepo.createQueryBuilder('d');
+
+    if (keyword) {
+      qb.where('(d.title LIKE :kw OR d.tags LIKE :kw)', { kw: `%${keyword}%` });
+    }
+
+    qb.orderBy('d.created_at', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+    return { items, total, page, limit };
+  }
+
+  /**
+   * 管理后台 - 创建剧目
+   */
+  async create(data: Partial<Drama>) {
+    const drama = this.dramaRepo.create(data);
+    return this.dramaRepo.save(drama);
+  }
+
+  /**
+   * 管理后台 - 更新剧目
+   */
+  async update(id: number, data: Partial<Drama>) {
+    await this.dramaRepo.update(id, data);
+    return this.dramaRepo.findOne({ where: { id } });
+  }
+
+  /**
+   * 管理后台 - 删除剧目
+   */
+  async remove(id: number) {
+    await this.dramaRepo.delete(id);
+    return { success: true };
+  }
+
+  /**
+   * 管理后台 - 上下架
+   */
+  async toggleStatus(id: number) {
+    const drama = await this.dramaRepo.findOne({ where: { id } });
+    if (!drama) throw new NotFoundException('剧目不存在');
+    drama.status = drama.status === 1 ? 0 : 1;
+    await this.dramaRepo.save(drama);
+    return drama;
+  }
 }

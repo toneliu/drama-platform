@@ -168,4 +168,47 @@ export class EpisodeService {
       ],
     };
   }
+
+  // ============ 管理后台接口 ============
+
+  /**
+   * 获取某剧目下的集数列表
+   */
+  async findByDrama(dramaId: number, page = 1, limit = 50) {
+    const [items, total] = await this.episodeRepo.findAndCount({
+      where: { drama_id: dramaId },
+      order: { episode_number: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return { items, total, page, limit };
+  }
+
+  /**
+   * 创建集数
+   */
+  async create(data: Partial<Episode>) {
+    // 转换布尔值为数字
+    if (typeof data.is_free === 'boolean') {
+      data.is_free = data.is_free ? 1 : 0;
+    }
+    const episode = this.episodeRepo.create(data);
+    return this.episodeRepo.save(episode);
+  }
+
+  /**
+   * 更新集数
+   */
+  async update(id: number, data: Partial<Episode>) {
+    await this.episodeRepo.update(id, data);
+    return this.episodeRepo.findOne({ where: { id } });
+  }
+
+  /**
+   * 删除集数
+   */
+  async remove(id: number) {
+    await this.episodeRepo.delete(id);
+    return { success: true };
+  }
 }
