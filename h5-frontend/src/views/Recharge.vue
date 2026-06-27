@@ -78,7 +78,7 @@
 import { ref, onMounted } from 'vue'
 import { showToast, showLoadingToast, closeToast } from 'vant'
 import { useUserStore } from '@/stores/user'
-import { getCoinPackages, createRechargeOrder } from '@/api/payment'
+import { getCoinPackages, createPaymentOrder } from '@/api/payment'
 import type { CoinPackage } from '@/api/payment'
 
 const userStore = useUserStore()
@@ -91,7 +91,7 @@ async function handleRecharge() {
   if (!selectedId.value) return
   showLoadingToast({ message: '创建订单中...', forbidClick: true })
   try {
-    const result = await createRechargeOrder(selectedId.value, payMethod.value)
+    const result = await createPaymentOrder(selectedId.value, 'h5')
     closeToast()
     if (result.payUrl) {
       window.location.href = result.payUrl

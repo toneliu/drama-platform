@@ -14,7 +14,6 @@
           label="手机号"
           placeholder="请输入手机号"
           maxlength="11"
-          :rules="[{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确手机号' }]"
         />
         <van-field
           v-model="code"
@@ -63,7 +62,7 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast } from 'vant'
-import { login } from '@/api/user'
+import { loginByPhone } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -106,9 +105,9 @@ async function handleLogin() {
 
   loading.value = true
   try {
-    const result = await login(phone.value, code.value)
+    const result = await loginByPhone(phone.value, code.value)
     userStore.setToken(result.token)
-    userStore.fetchProfile()
+    await userStore.fetchProfile()
     showToast('登录成功')
 
     const redirect = (route.query.redirect as string) || '/'

@@ -3,7 +3,8 @@ import api from './index'
 export interface SubscriptionPlan {
   id: string
   name: string
-  product_id: string
+  product_id?: string
+  planId?: string
   price: number
   duration_days: number
   description: string

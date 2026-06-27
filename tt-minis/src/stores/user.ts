@@ -1,74 +1,107 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { authApi, userApi } from '@/api'
 import { ttSDK } from '@/utils/tt'
-import { userApi } from '@/api/user'
+
+interface UserInfo {
+  id: number
+  nickname: string
+  avatar: string | null
+  coins: number
+  vip_status: string
+  vip_expire_time: string | null
+}
 
 export const useUserStore = defineStore('user', () => {
-  const ttOpenId = ref('')
-  const nickname = ref('')
-  const avatar = ref('')
-  const coins = ref(0)
-  const vipLevel = ref(0)
-  const vipExpireAt = ref('')
-  const isLoggedIn = ref(false)
-  const token = ref('')
+  const token = ref<string>(localStorage.getItem('tt_token') || '')
+  const userInfo = ref<UserInfo | null>(null)
+  const ttOpenId = ref<string>(localStorage.getItem('tt_open_id') || '')
 
-  const isVip = computed(() => vipLevel.value > 0 && new Date(vipExpireAt.value) > new Date())
+  const isLoggedIn = computed(() => !!token.value)
+  const isVip = computed(() => userInfo.value?.vip_status === 'active')
+  const coins = computed(() => userInfo.value?.coins || 0)
+  const avatar = computed(() => userInfo.value?.avatar || '')
+  const nickname = computed(() => userInfo.value?.nickname || '未登录')
 
+  // 自动登录
   async function autoLogin() {
-    try {
-      const { tt_open_id } = await ttSDK.login()
-      ttOpenId.value = tt_open_id
-
-      const userInfo = await ttSDK.getUserInfo()
-      nickname.value = userInfo.nickname
-      avatar.value = userInfo.avatar
-
-      // 向后端换取 JWT
-      const res = await userApi.loginWithTT(tt_open_id)
-      token.value = res.data.token
-      coins.value = res.data.coins
-      vipLevel.value = res.data.vip_level
-      vipExpireAt.value = res.data.vip_expire_at
-      isLoggedIn.value = true
-
-      // 存储 token
-      localStorage.setItem('tt_token', token.value)
-    } catch (e) {
-      console.warn('自动登录失败，使用游客模式', e)
-      isLoggedIn.value = false
+    if (token.value) {
+      await fetchProfile()
+    } else {
+      await login()
     }
   }
 
-  async function refreshUserInfo() {
-    if (!isLoggedIn.value) return
+  function setAuth(t: string, user: UserInfo) {
+    token.value = t
+    userInfo.value = user
+    localStorage.setItem('tt_token', t)
+    localStorage.setItem('tt_user', JSON.stringify(user))
+  }
+
+  // TikTok 小程序登录
+  async function login() {
     try {
-      const res = await userApi.getProfile()
-      coins.value = res.data.coins
-      vipLevel.value = res.data.vip_level
-      vipExpireAt.value = res.data.vip_expire_at
-      nickname.value = res.data.nickname || nickname.value
-      avatar.value = res.data.avatar || avatar.value
+      const code = await ttSDK.login()
+      const ttUserInfo = await ttSDK.getUserInfo()
+
+      const res: any = await authApi.tiktokLogin({
+        tt_open_id: ttUserInfo.openId || code,
+        nickname: ttUserInfo.nickname,
+        avatar: ttUserInfo.avatarUrl,
+      })
+
+      setAuth(res.token, res.user)
+      ttOpenId.value = ttUserInfo.openId || code
+      localStorage.setItem('tt_open_id', ttOpenId.value)
+
+      return res
     } catch (e) {
-      console.error('刷新用户信息失败', e)
+      console.error('登录失败', e)
+      throw e
+    }
+  }
+
+  async function fetchProfile() {
+    if (!token.value) return
+    try {
+      const res: any = await userApi.getProfile()
+      userInfo.value = res
+      localStorage.setItem('tt_user', JSON.stringify(res))
+    } catch (e) {
+      console.error('获取用户信息失败', e)
     }
   }
 
   function logout() {
-    ttOpenId.value = ''
-    nickname.value = ''
-    avatar.value = ''
-    coins.value = 0
-    vipLevel.value = 0
-    vipExpireAt.value = ''
-    isLoggedIn.value = false
     token.value = ''
+    userInfo.value = null
     localStorage.removeItem('tt_token')
+    localStorage.removeItem('tt_user')
+  }
+
+  function init() {
+    const savedUser = localStorage.getItem('tt_user')
+    if (savedUser) {
+      try { userInfo.value = JSON.parse(savedUser) } catch (e) {}
+    }
+    if (token.value) fetchProfile()
+  }
+
+  // 刷新用户信息
+  async function refreshUserInfo() {
+    await fetchProfile()
+  }
+
+  // 增加金币（UI用）
+  function addCoins(amount: number) {
+    if (userInfo.value) {
+      userInfo.value = { ...userInfo.value, coins: userInfo.value.coins + amount }
+    }
   }
 
   return {
-    ttOpenId, nickname, avatar, coins, vipLevel, vipExpireAt,
-    isLoggedIn, token, isVip,
-    autoLogin, refreshUserInfo, logout,
+    token, userInfo, ttOpenId, isLoggedIn, isVip, coins, avatar, nickname,
+    setAuth, login, fetchProfile, logout, init, refreshUserInfo, autoLogin, addCoins,
   }
 })

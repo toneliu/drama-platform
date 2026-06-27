@@ -45,46 +45,31 @@ export interface RankingItem {
 }
 
 /** 精选推荐 */
-export function getFeatured() {
-  return api.get<any, Drama[]>('/drama/featured')
+export function getFeatured(limit = 10) {
+  return api.get<any, Drama[]>('/drama/featured', { params: { limit } })
 }
 
 /** 新剧上线 */
-export function getNewRelease() {
-  return api.get<any, Drama[]>('/drama/new-release')
+export function getNewRelease(limit = 10) {
+  return api.get<any, Drama[]>('/drama/new-release', { params: { limit } })
 }
 
-/** 排行榜 */
+/** 排行榜 (hot/new/male/female) */
 export function getRanking(type: string) {
   return api.get<any, RankingItem[]>(`/drama/ranking/${type}`)
 }
 
 /** 分类列表 */
-export function getCategory(name: string) {
-  return api.get<any, Drama[]>(`/drama/category/${name}`)
+export function getCategory(name: string, page = 1, limit = 20) {
+  return api.get<any, Drama[]>(`/drama/category/${name}`, { params: { page, limit } })
 }
 
 /** 搜索 */
-export function searchDrama(keyword: string) {
-  return api.get<any, Drama[]>('/drama/search', { params: { keyword } })
+export function searchDrama(keyword: string, page = 1, limit = 20) {
+  return api.get<any, Drama[]>('/drama/search', { params: { keyword, page, limit } })
 }
 
-/** 剧集详情 */
+/** 剧集详情（含 episodes 列表） */
 export function getDramaDetail(id: string) {
   return api.get<any, DramaDetail>(`/drama/${id}`)
-}
-
-/** 播放信息 */
-export function getPlayInfo(episodeId: string) {
-  return api.get<any, PlayInfo>(`/episode/${episodeId}/play`)
-}
-
-/** 金币解锁 */
-export function unlockByCoins(episodeId: string) {
-  return api.post<any, { success: boolean }>(`/episode/${episodeId}/unlock/coins`)
-}
-
-/** 广告解锁 */
-export function unlockByAd(episodeId: string) {
-  return api.post<any, { success: boolean }>(`/episode/${episodeId}/unlock/ad`)
 }

@@ -11,9 +11,9 @@
     </div>
 
     <!-- Banner 轮播 -->
-    <div class="banner-wrap" v-if="featured.length">
+    <div class="banner-wrap" v-if="dramaStore.featured.length">
       <van-swipe :autoplay="4000" indicator-color="#ff4d6a" class="banner-swipe">
-        <van-swipe-item v-for="item in featured.slice(0, 5)" :key="item.id">
+        <van-swipe-item v-for="item in dramaStore.featured.slice(0, 5)" :key="item.id">
           <div class="banner-item" @click="goDetail(item.id)">
             <img :src="item.coverUrl" :alt="item.title" />
             <div class="banner-title">{{ item.title }}</div>
@@ -44,7 +44,7 @@
       </div>
       <div class="drama-scroll">
         <DramaCard
-          v-for="item in featured"
+          v-for="item in dramaStore.featured"
           :key="item.id"
           :drama="item"
           class="drama-scroll-item"
@@ -60,7 +60,7 @@
       </div>
       <div class="drama-grid">
         <DramaCard
-          v-for="item in newRelease"
+          v-for="item in dramaStore.newRelease"
           :key="item.id"
           :drama="item"
           @click="goDetail(item.id)"
@@ -77,15 +77,15 @@
         <span
           v-for="t in rankTypes"
           :key="t.value"
-          :class="{ active: rankType === t.value }"
-          @click="switchRank(t.value)"
+          :class="{ active: dramaStore.rankingType === t.value }"
+          @click="dramaStore.fetchRanking(t.value)"
         >
           {{ t.label }}
         </span>
       </div>
       <div class="rank-list">
         <div
-          v-for="(item, i) in ranking"
+          v-for="(item, i) in dramaStore.ranking"
           :key="item.drama.id"
           class="rank-item"
           @click="goDetail(item.drama.id)"
@@ -105,18 +105,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DramaCard from '@/components/DramaCard.vue'
-import { getFeatured, getNewRelease, getRanking } from '@/api/drama'
-import type { Drama, RankingItem } from '@/api/drama'
+import { useDramaStore } from '@/stores/drama'
 
 const router = useRouter()
-
-const featured = ref<Drama[]>([])
-const newRelease = ref<Drama[]>([])
-const ranking = ref<RankingItem[]>([])
-const rankType = ref('hot')
+const dramaStore = useDramaStore()
 
 const categories = [
   { name: '甜宠', icon: '💕' },
@@ -132,7 +127,8 @@ const categories = [
 const rankTypes = [
   { label: '最热', value: 'hot' },
   { label: '最新', value: 'new' },
-  { label: '好评', value: 'rating' },
+  { label: '男生', value: 'male' },
+  { label: '女生', value: 'female' },
 ]
 
 function formatCount(n: number): string {
@@ -148,24 +144,8 @@ function goCategory(name: string) {
   router.push(`/search?category=${name}`)
 }
 
-async function switchRank(type: string) {
-  rankType.value = type
-  try {
-    ranking.value = await getRanking(type)
-  } catch {}
-}
-
-onMounted(async () => {
-  try {
-    const [f, n, r] = await Promise.allSettled([
-      getFeatured(),
-      getNewRelease(),
-      getRanking('hot'),
-    ])
-    if (f.status === 'fulfilled') featured.value = f.value
-    if (n.status === 'fulfilled') newRelease.value = n.value
-    if (r.status === 'fulfilled') ranking.value = r.value
-  } catch {}
+onMounted(() => {
+  dramaStore.fetchHomeData()
 })
 </script>
 

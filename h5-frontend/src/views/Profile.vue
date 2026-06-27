@@ -13,25 +13,25 @@
         />
         <div class="user-detail">
           <div class="nickname">{{ profile?.nickname || '未登录' }}</div>
-          <div v-if="profile" class="user-id">ID: {{ profile.id.slice(0, 8) }}</div>
-          <div v-if="profile?.isVip" class="vip-badge">👑 VIP</div>
+          <div v-if="profile" class="user-id">ID: {{ profile.id }}</div>
+          <div v-if="isVip" class="vip-badge">👑 VIP</div>
         </div>
       </div>
 
       <!-- 金币和VIP -->
       <div class="stats-row">
         <div class="stat-item" @click="$router.push('/recharge')">
-          <div class="stat-value">🪙 {{ profile?.coinBalance ?? 0 }}</div>
+          <div class="stat-value">🪙 {{ profile?.coins ?? 0 }}</div>
           <div class="stat-label">金币</div>
         </div>
         <div class="stat-item" @click="$router.push('/subscription')">
           <div class="stat-value">
-            {{ profile?.isVip ? 'VIP有效' : '未开通' }}
+            {{ isVip ? 'VIP有效' : '未开通' }}
           </div>
           <div class="stat-label">会员</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value">{{ profile?.totalWatched ?? 0 }}</div>
+          <div class="stat-value">-</div>
           <div class="stat-label">已看集数</div>
         </div>
       </div>
@@ -94,7 +94,7 @@
       @confirm="handleRedeem"
     >
       <van-field
-        v-model="redeemCode"
+        v-model="redeemCodeInput"
         placeholder="请输入兑换码"
         maxlength="32"
       />
@@ -105,24 +105,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useUserStore } from '@/stores/user'
-import { redeemCode as redeemApi } from '@/api/user'
+import { redeemCode } from '@/api/redeem'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const profile = ref(userStore.profile)
+const isVip = computed(() => userStore.isVip)
 const defaultAvatar = 'https://img.yzcdn.cn/vant/cat.jpeg'
 const showRedeem = ref(false)
-const redeemCode = ref('')
+const redeemCodeInput = ref('')
 
 async function handleRedeem() {
-  if (!redeemCode.value.trim()) return
+  if (!redeemCodeInput.value.trim()) return
   try {
-    const result = await redeemApi(redeemCode.value.trim())
+    const result = await redeemCode(redeemCodeInput.value.trim())
     showToast(`兑换成功: ${result.reward}`)
     await userStore.fetchProfile()
     profile.value = userStore.profile

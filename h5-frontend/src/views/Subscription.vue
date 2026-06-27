@@ -14,6 +14,15 @@
           自动续费: {{ status.autoRenew ? '已开启' : '已关闭' }}
         </div>
       </div>
+      <van-button
+        v-if="status.autoRenew"
+        plain
+        round
+        size="small"
+        @click="handleCancelAutoRenew"
+      >
+        取消续费
+      </van-button>
     </div>
     <div v-else class="status-card inactive">
       <div class="status-icon">🔒</div>
@@ -69,7 +78,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { showToast, showLoadingToast, closeToast } from 'vant'
-import { getSubTiers, getSubStatus, createSubOrder } from '@/api/subscription'
+import { getSubTiers, getSubStatus, createSubOrder, cancelAutoRenew } from '@/api/subscription'
 import type { SubTier, SubStatus } from '@/api/subscription'
 
 const tiers = ref<SubTier[]>([])
@@ -85,7 +94,7 @@ async function handleSubscribe() {
   if (!selectedTier.value) return
   showLoadingToast({ message: '创建订单中...', forbidClick: true })
   try {
-    const result = await createSubOrder(selectedTier.value)
+    const result = await createSubOrder(selectedTier.value, 'h5')
     closeToast()
     if (result.payUrl) {
       window.location.href = result.payUrl
@@ -95,6 +104,15 @@ async function handleSubscribe() {
   } catch {
     closeToast()
   }
+}
+
+async function handleCancelAutoRenew() {
+  try {
+    await cancelAutoRenew()
+    showToast('已取消自动续费')
+    // 重新加载状态
+    status.value = await getSubStatus()
+  } catch {}
 }
 
 onMounted(async () => {

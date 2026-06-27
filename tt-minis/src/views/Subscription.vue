@@ -77,7 +77,7 @@ const plans = ref<SubscriptionPlan[]>([
   {
     id: '1',
     name: '月度会员',
-    product_id: 'vip_monthly',
+    planId: 'vip_monthly',
     price: 18,
     duration_days: 30,
     description: '',
@@ -86,7 +86,7 @@ const plans = ref<SubscriptionPlan[]>([
   {
     id: '2',
     name: '季度会员',
-    product_id: 'vip_quarterly',
+    planId: 'vip_quarterly',
     price: 48,
     duration_days: 90,
     description: '',
@@ -95,7 +95,7 @@ const plans = ref<SubscriptionPlan[]>([
   {
     id: '3',
     name: '年度会员',
-    product_id: 'vip_yearly',
+    planId: 'vip_yearly',
     price: 168,
     duration_days: 365,
     description: '',
@@ -118,7 +118,7 @@ async function handleSubscribe() {
   if (!selectedPlan.value) return
   subscribing.value = true
   try {
-    await ttSDK.subscribe({ product_id: selectedPlan.value.product_id })
+    await ttSDK.subscribe({ planId: selectedPlan.value.planId || selectedPlan.value.id })
     await userStore.refreshUserInfo()
     ttSDK.showToast('订阅成功')
   } catch (e: any) {

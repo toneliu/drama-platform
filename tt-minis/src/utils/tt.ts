@@ -1,146 +1,192 @@
 /**
  * TikTok Minis SDK 封装
- * 在 TikTok 环境中使用真实 tt.* API，浏览器中使用 mock
+ * 参照 tiktok-drama-mini 的实现
  */
 
-const isTikTok = typeof tt !== 'undefined' && typeof tt.login === 'function'
+const tt = (window as any).tt || (window as any).TTMinis
 
-// ---------- mock helpers ----------
-function mockDelay(ms = 300) {
-  return new Promise(r => setTimeout(r, ms))
-}
-
-function mockOpenId() {
-  const stored = localStorage.getItem('mock_tt_open_id')
-  if (stored) return stored
-  const id = 'mock_' + Math.random().toString(36).slice(2, 10)
-  localStorage.setItem('mock_tt_open_id', id)
-  return id
-}
-
-// ---------- SDK wrapper ----------
 export const ttSDK = {
-  /** 静默登录 → 获取 tt_open_id */
-  async login(): Promise<{ tt_open_id: string }> {
-    if (isTikTok) {
-      const res = await tt.login()
-      // 拿 code 换 open_id，这里简化为直接返回
-      // 实际需后端用 code 调 tt.oauth 换取
-      return { tt_open_id: res.code }
-    }
-    await mockDelay()
-    return { tt_open_id: mockOpenId() }
+  /** 是否在小程序环境 */
+  isMiniApp: (): boolean => {
+    return typeof tt !== 'undefined' && typeof tt.login === 'function'
+  },
+
+  /** 登录获取 code */
+  login: (): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (!tt) {
+        // 开发环境模拟
+        resolve('mock_code_' + Date.now())
+        return
+      }
+      tt.login({
+        success: (res: any) => resolve(res.code),
+        fail: (err: any) => reject(err),
+      })
+    })
   },
 
   /** 获取用户信息 */
-  async getUserInfo(): Promise<{ nickname: string; avatar: string }> {
-    if (isTikTok) {
-      const res = await tt.getUserInfo()
-      return {
-        nickname: res.userInfo.nickName,
-        avatar: res.userInfo.avatarUrl,
-      }
-    }
-    await mockDelay()
-    return {
-      nickname: '测试用户',
-      avatar: '',
-    }
-  },
-
-  /** VIP 订阅 (TTMinis.subscribe) */
-  async subscribe(options: { product_id: string }): Promise<any> {
-    if (isTikTok && typeof TTMinis !== 'undefined') {
-      return new Promise((resolve, reject) => {
-        TTMinis.subscribe({
-          product_id: options.product_id,
-          success: () => resolve({ status: 'subscribed' }),
-          fail: (err: any) => reject(err),
+  getUserInfo: () => {
+    return new Promise<{
+      openId: string
+      nickname: string
+      avatarUrl: string
+    }>((resolve, reject) => {
+      if (!tt) {
+        resolve({
+          openId: 'mock_open_id',
+          nickname: '测试用户',
+          avatarUrl: '',
         })
-      })
-    }
-    await mockDelay(500)
-    console.log('[mock] subscribe', options)
-    return { status: 'subscribed', mock: true }
-  },
-
-  /** 一次性支付（金币充值） */
-  async requestPayment(options: { product_id: string; amount: number }): Promise<any> {
-    if (isTikTok) {
-      return tt.requestPayment(options)
-    }
-    await mockDelay(500)
-    console.log('[mock] requestPayment', options)
-    return { status: 'paid', mock: true }
-  },
-
-  /** 激励视频广告 */
-  async createRewardedAd(adUnitId: string): Promise<{ show(): Promise<any> }> {
-    if (isTikTok) {
-      const ad = tt.createRewardedVideoAd({ adUnitId })
-      return {
-        show(): Promise<any> {
-          return new Promise((resolve, reject) => {
-            ad.onClose((res: any) => {
-              if (res && res.isEnded) {
-                resolve(res)
-              } else {
-                reject(new Error('广告未看完'))
-              }
-            })
-            ad.onError((err: any) => reject(err))
-            ad.show().catch(reject)
-          })
-        },
+        return
       }
+      tt.getUserInfo({
+        success: (res: any) => resolve(res.userInfo),
+        fail: (err: any) => reject(err),
+      })
+    })
+  },
+
+  /** 支付 */
+  pay: (tradeOrderId: string) => {
+    return new Promise<{ orderId: string }>((resolve, reject) => {
+      if (!tt) {
+        setTimeout(() => resolve({ orderId: tradeOrderId }), 1000)
+        return
+      }
+      tt.pay({
+        tradeOrderId,
+        success: (res: any) => resolve(res),
+        fail: (err: any) => reject(new Error(err.errMsg)),
+      })
+    })
+  },
+
+  /** 发起支付请求 */
+  requestPayment: (params: { orderInfo: string; service: number }) => {
+    return new Promise<void>((resolve, reject) => {
+      if (!tt) {
+        setTimeout(() => resolve(), 1000)
+        return
+      }
+      tt.pay({
+        orderInfo: params.orderInfo,
+        service: params.service,
+        success: () => resolve(),
+        fail: (err: any) => reject(new Error(err.errMsg)),
+      })
+    })
+  },
+
+  /** 显示提示 */
+  showToast: (title: string, icon = 'none') => {
+    if (!tt) {
+      console.log('[Toast]', title)
+      return
     }
-    // 浏览器 mock：模拟看完广告
-    await mockDelay(300)
-    return {
-      async show() {
-        console.log('[mock] rewarded ad shown')
-        await mockDelay(2000)
-        return { isEnded: true, mock: true }
-      },
-    }
+    tt.showToast({ title, icon })
   },
 
   /** 分享 */
-  async share(options: { title: string; imageUrl: string; path: string }): Promise<any> {
-    if (isTikTok) {
-      return tt.shareAppMessage(options)
-    }
-    await mockDelay()
-    console.log('[mock] share', options)
-    // 浏览器用 Web Share API 降级
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: options.title, url: options.path })
-      } catch { /* user cancelled */ }
-    }
-    return { mock: true }
+  share: (params: { title: string; imageUrl?: string; path?: string } | string) => {
+    return new Promise<void>((resolve, reject) => {
+      if (!tt) { resolve(); return }
+      const videoUrl = typeof params === 'string' ? params : params.path || ''
+      tt.shareToFeed({
+        videoUrl,
+        success: () => resolve(),
+        fail: (err: any) => reject(err),
+      })
+    })
   },
 
-  /** 显示 Toast */
-  showToast(title: string) {
-    if (isTikTok) {
-      tt.showToast({ title, icon: 'none' })
-      return
-    }
-    // 浏览器降级
-    console.log('[toast]', title)
+  /** 订阅 */
+  subscribe: (params: { planId: string }) => {
+    return new Promise<void>((resolve, reject) => {
+      if (!tt) { resolve(); return }
+      // 实际调用支付
+      tt.pay({
+        orderInfo: params.planId,
+        success: () => resolve(),
+        fail: (err: any) => reject(new Error(err.errMsg)),
+      })
+    })
+  },
+
+  /** 分享 */
+  shareToFeed: (videoUrl: string) => {
+    return new Promise<void>((resolve, reject) => {
+      if (!tt) { resolve(); return }
+      tt.shareToFeed({
+        videoUrl,
+        success: () => resolve(),
+        fail: (err: any) => reject(err),
+      })
+    })
+  },
+
+  /** 激励视频广告 */
+  createRewardedVideoAd: (adUnitId: string) => {
+    if (!tt) return null
+    return tt.createRewardedVideoAd({ adUnitId })
+  },
+
+  /** 设置导航栏标题 */
+  setNavigationBarTitle: (title: string) => {
+    return new Promise<void>((resolve, reject) => {
+      if (!tt) { resolve(); return }
+      tt.setNavigationBarTitle({
+        title,
+        success: () => resolve(),
+        fail: (err: any) => reject(err),
+      })
+    })
   },
 
   /** 获取系统信息 */
-  getSystemInfo(): { platform: string; statusBarHeight: number } {
-    if (isTikTok) {
-      return tt.getSystemInfoSync()
-    }
-    return { platform: 'devtools', statusBarHeight: 44 }
+  getSystemInfo: () => {
+    return new Promise<any>((resolve, reject) => {
+      if (!tt) {
+        resolve({
+          screenWidth: 375, screenHeight: 812,
+          windowWidth: 375, windowHeight: 812,
+          platform: 'devtools', language: 'zh',
+        })
+        return
+      }
+      tt.getSystemInfo({
+        success: (res: any) => resolve(res),
+        fail: (err: any) => reject(err),
+      })
+    })
   },
 
-  /** 是否在 TikTok 环境 */
-  get isTikTokEnv() {
-    return isTikTok
+  /** 存储 */
+  storage: {
+    set: (key: string, data: any) => {
+      return new Promise<void>((resolve, reject) => {
+        if (!tt) { localStorage.setItem(key, JSON.stringify(data)); resolve(); return }
+        tt.setStorage({ key, data, success: () => resolve(), fail: (err: any) => reject(err) })
+      })
+    },
+    get: <T = any>(key: string): Promise<T | null> => {
+      return new Promise((resolve) => {
+        if (!tt) {
+          const data = localStorage.getItem(key)
+          resolve(data ? JSON.parse(data) : null)
+          return
+        }
+        tt.getStorage({ key, success: (res: any) => resolve(res.data), fail: () => resolve(null) })
+      })
+    },
+    remove: (key: string) => {
+      return new Promise<void>((resolve, reject) => {
+        if (!tt) { localStorage.removeItem(key); resolve(); return }
+        tt.removeStorage({ key, success: () => resolve(), fail: (err: any) => reject(err) })
+      })
+    },
   },
 }
+
+export default ttSDK

@@ -82,6 +82,7 @@ const episodeId = route.params.episodeId as string
 const playerRef = ref()
 const showUnlock = ref(false)
 const videoSrc = ref('')
+const episodePrice = ref(0)
 const episodeInfo = ref<Episode & { unlocked?: boolean }>({
   id: episodeId,
   drama_id: '',
@@ -129,7 +130,7 @@ async function unlockByCoins() {
   try {
     const res = await paymentApi.unlockEpisode(episodeId, 'coins')
     if (res.data.success) {
-      userStore.coins = res.data.remaining_coins
+      userStore.addCoins(-(episodePrice.value || 0))
       showUnlock.value = false
       // 重新获取播放信息
       const playRes = await dramaApi.getPlayInfo(episodeId)
@@ -142,7 +143,7 @@ async function unlockByCoins() {
 
 async function unlockByAd() {
   try {
-    const ad = await ttSDK.createRewardedAd('your-ad-unit-id')
+    const ad = await ttSDK.createRewardedVideoAd('your-ad-unit-id')
     await ad.show()
     // 广告看完，请求后端发放奖励并解锁
     const res = await paymentApi.unlockEpisode(episodeId, 'ad')

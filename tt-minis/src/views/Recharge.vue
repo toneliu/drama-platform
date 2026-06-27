@@ -98,14 +98,14 @@ async function handlePay() {
 
     // 2. 调用 TikTok 支付
     const payResult = await ttSDK.requestPayment({
-      product_id: selectedPackage.value.id,
-      amount: selectedPackage.value.price,
+      orderInfo: JSON.stringify({id: selectedPackage.value.id, amount: selectedPackage.value.price}),
+      service: 1,
     })
 
     // 3. 后端确认
     const confirmRes = await paymentApi.confirmPayment(orderRes.data.order_id, payResult)
     if (confirmRes.data.success) {
-      userStore.coins = confirmRes.data.coins
+      userStore.addCoins(confirmRes.data.coins || selectedPackage.value.coins)
       ttSDK.showToast('充值成功')
     }
   } catch (e: any) {

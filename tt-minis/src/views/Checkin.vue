@@ -91,7 +91,7 @@ async function handleCheckin() {
     const res = await userApi.checkin()
     checkedToday.value = true
     streak.value = res.data.streak
-    userStore.coins += res.data.reward_coins
+    userStore.addCoins(res.data.reward_coins)
     ttSDK.showToast(`签到成功！获得 ${res.data.reward_coins} 金币`)
   } catch (e: any) {
     ttSDK.showToast(e.message || '签到失败')

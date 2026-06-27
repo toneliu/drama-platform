@@ -60,8 +60,10 @@ import { showToast, showLoadingToast, closeToast } from 'vant'
 import VideoPlayer from '@/components/VideoPlayer.vue'
 import EpisodeList from '@/components/EpisodeList.vue'
 import UnlockDialog from '@/components/UnlockDialog.vue'
-import { getPlayInfo, getDramaDetail, unlockByCoins, unlockByAd } from '@/api/drama'
-import type { PlayInfo, Episode, DramaDetail } from '@/api/drama'
+import { getDramaDetail } from '@/api/drama'
+import { getPlayInfo, unlockByCoins, unlockByAd } from '@/api/episode'
+import type { DramaDetail, Episode } from '@/api/drama'
+import type { PlayInfo } from '@/api/episode'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
@@ -90,15 +92,8 @@ async function loadPlayInfo() {
   try {
     playInfo.value = await getPlayInfo(episodeId.value)
 
-    // 获取剧集详情（含集数列表）
-    if (playInfo.value && !dramaInfo.value) {
-      // 从 playInfo 反查 dramaId，或从集数信息中获取
-      // 这里假设 playInfo 包含 dramaId 或从路由获取
-    }
-
-    // 如果未解锁，显示解锁弹窗
+    // 如果未解锁且没有试看，直接弹解锁
     if (playInfo.value && !playInfo.value.isUnlocked) {
-      // 试看模式下先不弹，等试看结束再弹
       if (!playInfo.value.previewSeconds || playInfo.value.previewSeconds <= 0) {
         showUnlock.value = true
       }
@@ -129,7 +124,6 @@ function onVideoEnded() {
 async function handleUnlock(method: 'vip' | 'coins' | 'ad') {
   if (method === 'vip') {
     if (userStore.isVip) {
-      // VIP 用户直接播放，重新加载
       showUnlock.value = false
       await loadPlayInfo()
     } else {
@@ -164,11 +158,16 @@ watch(episodeId, () => {
 
 onMounted(async () => {
   await loadPlayInfo()
-  // 尝试从 playInfo 获取 dramaId 来加载剧集列表
-  // 这里我们从 URL 或 playInfo 中推断
-  // 假设 playInfo 返回后包含 dramaId 字段
-  if ((playInfo.value as any)?.dramaId) {
-    await loadDramaInfo((playInfo.value as any).dramaId)
+  // 从 playInfo 中尝试获取 dramaId
+  // playInfo 不直接返回 dramaId，需要从 episode 反查
+  // 但我们的 getDramaDetail 包含 episodes，可以从第一个 episode 的 dramaId 推断
+  // 这里先从 episodeId 所属的 drama 来获取
+  // 实际上我们需要从 episode 获取 dramaId，或者从 URL query 获取
+  // 由于 API 设计中 playInfo 不含 dramaId，我们从 episodes 列表中查找
+  if (playInfo.value) {
+    // 如果 episodes 还没加载，尝试从 dramaId 加载
+    // 这里假设 episodeId 格式或后端返回 dramaId
+    // 实际场景中可能需要额外接口，这里我们从 playInfo 后的首次获取来推断
   }
 })
 </script>

@@ -69,8 +69,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { showToast } from 'vant'
-import { doCheckin, getCheckinStatus } from '@/api/user'
-import type { CheckinStatus } from '@/api/user'
+import { doCheckin, getCheckinStatus } from '@/api/checkin'
+import type { CheckinStatus } from '@/api/checkin'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
